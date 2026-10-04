@@ -2,9 +2,11 @@ const express = require("express");
 
 const {
     recordTestResult,
-    getSessionCompliance
-} = require("../controllers/testResultController");
-
+    getSessionCompliance,
+    finalizeTestSession
+} = require(
+    "../controllers/testResultController"
+);
 
 const router =
     express.Router();
@@ -22,4 +24,11 @@ router.get(
 );
 
 
-module.exports = router;
+router.post(
+    "/session/:sessionId/finalize",
+    finalizeTestSession
+);
+
+
+module.exports =
+    router;

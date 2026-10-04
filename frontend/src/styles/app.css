@@ -3341,3 +3341,77 @@ h1 {
     }
 
 }
+/* ==================================================
+   SEQUENTIAL TEST EXECUTION
+   ================================================== */
+
+.test-sidebar-item.locked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #fafbfd;
+}
+
+.test-sidebar-item.locked:hover {
+    background: #fafbfd;
+}
+
+.test-sidebar-item.complete {
+    color: #2f7f5a;
+}
+
+.test-sidebar-item.complete strong {
+    color: #2f7f5a;
+}
+
+.test-sidebar-item.complete small {
+    color: #39815e;
+}
+
+.test-sidebar-item:disabled {
+    cursor: not-allowed;
+}
+
+.form-section-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.form-section-intro strong {
+    font-size: 13px;
+}
+
+.form-section-intro span {
+    color: #7e8998;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.test-form-card textarea,
+.test-form-card select {
+    width: 100%;
+    border: 1px solid #dce2e9;
+    border-radius: 7px;
+    padding: 10px;
+    background: #ffffff;
+    outline: none;
+}
+
+.test-form-card textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.test-form-card select:focus,
+.test-form-card textarea:focus,
+.test-form-card input:focus {
+    border-color: #9da9b8;
+}
+
+.formula-box small {
+    display: block;
+    margin-top: 6px;
+    color: #7d8796;
+    font-size: 10px;
+}

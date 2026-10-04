@@ -1,34 +1,55 @@
 import axios from "axios";
 
+
 const API = axios.create({
-    baseURL: `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5100"}/api`,
+
+    baseURL:
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5100"}/api`,
+
     headers: {
-        "Content-Type": "application/json"
+        "Content-Type":
+            "application/json"
     }
+
 });
+
 
 // ---------------------------------------------
 // HEALTH
 // ---------------------------------------------
 
 export const healthCheck = () =>
-    API.get("/health");
+    API.get(
+        "/health"
+    );
+
 
 // ---------------------------------------------
 // INSTRUMENTS
 // ---------------------------------------------
 
 export const getInstruments = () =>
-    API.get("/instruments");
+    API.get(
+        "/instruments"
+    );
 
-export const getInstrument = (id) =>
-    API.get(`/instruments/${id}`);
 
-export const registerInstrument = (data) =>
+export const getInstrument = (
+    id
+) =>
+    API.get(
+        `/instruments/${id}`
+    );
+
+
+export const registerInstrument = (
+    data
+) =>
     API.post(
         "/instruments",
         data
     );
+
 
 export const startTestSession = (
     instrumentId
@@ -36,6 +57,7 @@ export const startTestSession = (
     API.post(
         `/instruments/${instrumentId}/start-test`
     );
+
 
 // ---------------------------------------------
 // TEST SESSION
@@ -48,12 +70,14 @@ export const getTestSession = (
         `/tests/sessions/${sessionId}`
     );
 
+
 export const getTestPlan = (
     sessionId
 ) =>
     API.get(
         `/tests/sessions/${sessionId}/test-plan`
     );
+
 
 // ---------------------------------------------
 // OBSERVATIONS
@@ -68,6 +92,7 @@ export const saveObservation = (
         data
     );
 
+
 // ---------------------------------------------
 // CALCULATIONS
 // ---------------------------------------------
@@ -81,6 +106,7 @@ export const calculateIndication = (
         data
     );
 
+
 export const calculateRepeatability = (
     sessionId,
     data
@@ -90,8 +116,38 @@ export const calculateRepeatability = (
         data
     );
 
+
 // ---------------------------------------------
-// COMPLIANCE
+// TEST RESULT WORKFLOW
+// ---------------------------------------------
+
+export const recordTestResult = (
+    data
+) =>
+    API.post(
+        "/test-results/record",
+        data
+    );
+
+
+export const getSessionCompliance = (
+    sessionId
+) =>
+    API.get(
+        `/test-results/session/${sessionId}/compliance`
+    );
+
+
+export const finalizeTestSession = (
+    sessionId
+) =>
+    API.post(
+        `/test-results/session/${sessionId}/finalize`
+    );
+
+
+// ---------------------------------------------
+// LEGACY COMPLIANCE
 // ---------------------------------------------
 
 export const getCompliance = (
@@ -101,12 +157,14 @@ export const getCompliance = (
         `/tests/sessions/${sessionId}/compliance`
     );
 
+
 export const recalculateCompliance = (
     sessionId
 ) =>
     API.post(
         `/tests/sessions/${sessionId}/recalculate`
     );
+
 
 // ---------------------------------------------
 // REPORTS
@@ -119,11 +177,13 @@ export const generateReport = (
         `/reports/session/${sessionId}/generate`
     );
 
+
 export const getSessionReports = (
     sessionId
 ) =>
     API.get(
         `/reports/session/${sessionId}`
     );
+
 
 export default API;

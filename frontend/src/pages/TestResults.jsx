@@ -148,56 +148,219 @@ function TestResults({
     // ========================================================
 
     const createReport =
-        async () => {
+    async () => {
 
-            try {
+        let pdfWindow = null;
 
-                setGenerating(
-                    true
+        try {
+
+            setGenerating(
+                true
+            );
+
+            setError("");
+
+
+            if (
+                !session?.id
+            ) {
+
+                throw new Error(
+                    "Test session ID is missing."
                 );
 
-                setError("");
+            }
 
 
-                if (
-                    !session?.id
-                ) {
+            /*
+            --------------------------------------------------
+            Open a blank tab immediately so the browser does
+            not block the PDF window after the API call.
+            --------------------------------------------------
+            */
 
-                    throw new Error(
-                        "Test session ID is missing."
-                    );
+            pdfWindow =
+                window.open(
+                    "about:blank",
+                    "_blank"
+                );
 
-                }
 
+            /*
+            --------------------------------------------------
+            Generate PDF + DOCX on backend
+            --------------------------------------------------
+            */
 
+            const response =
                 await generateReport(
                     session.id
                 );
 
 
-            }
-            catch (err) {
+            const pdfPath =
+                response
+                    ?.data
+                    ?.files
+                    ?.pdf
+                    ?.path;
 
-                console.error(
-                    err
+
+            const pdfFileName =
+                response
+                    ?.data
+                    ?.files
+                    ?.pdf
+                    ?.fileName;
+
+
+            const docxPath =
+                response
+                    ?.data
+                    ?.files
+                    ?.docx
+                    ?.path;
+
+
+            const docxFileName =
+                response
+                    ?.data
+                    ?.files
+                    ?.docx
+                    ?.fileName;
+
+
+            if (
+                !pdfPath
+            ) {
+
+                throw new Error(
+                    "Report was generated but the PDF file path was not returned by the server."
                 );
 
-                setError(
-                    err.response?.data?.message ||
-                    err.message ||
-                    "Report generation failed."
+            }
+
+
+            /*
+            --------------------------------------------------
+            PDF
+            --------------------------------------------------
+            */
+
+            const pdfUrl =
+                `${API_BASE}${pdfPath}`;
+
+
+            if (
+                pdfWindow
+            ) {
+
+                pdfWindow.location.href =
+                    pdfUrl;
+
+            }
+            else {
+
+                window.open(
+                    pdfUrl,
+                    "_blank"
                 );
 
             }
-            finally {
 
-                setGenerating(
-                    false
+
+            /*
+            --------------------------------------------------
+            DOCX
+            --------------------------------------------------
+            */
+
+            if (
+                docxPath
+            ) {
+
+                const docxUrl =
+                    `${API_BASE}${docxPath}`;
+
+
+                const link =
+                    document.createElement(
+                        "a"
+                    );
+
+
+                link.href =
+                    docxUrl;
+
+
+                link.download =
+                    docxFileName ||
+                    "NAWI-SmartLab-Test-Report.docx";
+
+
+                document.body.appendChild(
+                    link
+                );
+
+
+                link.click();
+
+
+                document.body.removeChild(
+                    link
                 );
 
             }
 
-        };
+
+            /*
+            --------------------------------------------------
+            Success message
+            --------------------------------------------------
+            */
+
+            setError(
+                ""
+            );
+
+
+        }
+        catch (err) {
+
+            console.error(
+                "Report generation error:",
+                err
+            );
+
+
+            if (
+                pdfWindow &&
+                !pdfWindow.closed
+            ) {
+
+                pdfWindow.close();
+
+            }
+
+
+            setError(
+                err.response
+                    ?.data
+                    ?.message ||
+                err.message ||
+                "Report generation failed."
+            );
+
+        }
+        finally {
+
+            setGenerating(
+                false
+            );
+
+        }
+
+    };
 
 
 
