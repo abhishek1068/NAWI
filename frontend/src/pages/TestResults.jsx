@@ -4,7 +4,8 @@ import React, {
 } from "react";
 
 import {
-    generateReport
+    generateReport,
+    getLatestCompletedSession
 } from "../services/api";
 
 
@@ -43,6 +44,14 @@ function TestResults({
         setGenerating
     ] = useState(false);
 
+    const [
+        resolvedSession,
+        setResolvedSession
+    ] = useState(null);
+
+    const activeSession =
+        resolvedSession ||
+        session;
 
 
     // ========================================================
@@ -50,82 +59,113 @@ function TestResults({
     // ========================================================
 
     const loadCompliance =
-        async () => {
+    async () => {
 
-            try {
+        try {
 
-                setLoading(
-                    true
+            setLoading(
+                true
+            );
+
+            setError("");
+
+
+            let currentSession =
+                activeSession;
+
+
+            // -----------------------------------------
+            // If dashboard opened a completed machine,
+            // find its latest completed test session.
+            // -----------------------------------------
+
+            if (
+                !currentSession?.id &&
+                instrument?._id
+            ) {
+
+                const sessionResponse =
+                    await getLatestCompletedSession(
+                        instrument._id
+                    );
+
+
+                currentSession =
+                    sessionResponse.data.session;
+
+
+                setResolvedSession(
+                    currentSession
                 );
-
-                setError("");
-
-
-                if (
-                    !session?.id
-                ) {
-
-                    throw new Error(
-                        "Test session ID is missing."
-                    );
-
-                }
-
-
-                const response =
-                    await fetch(
-                        `${API_BASE}/api/test-results/session/${session.id}/compliance`,
-                        {
-                            cache:
-                                "no-store"
-                        }
-                    );
-
-
-                const data =
-                    await response.json();
-
-
-                if (
-                    !response.ok ||
-                    !data.success
-                ) {
-
-                    throw new Error(
-                        data.message ||
-                        "Unable to load compliance."
-                    );
-
-                }
-
-
-                setCompliance(
-                    data.data
-                );
-
 
             }
-            catch (err) {
 
-                console.error(
-                    err
+
+            if (
+                !currentSession?.id
+            ) {
+
+                throw new Error(
+                    "Completed test session could not be found."
                 );
 
-                setError(
-                    err.message ||
+            }
+
+
+            const response =
+                await fetch(
+                    `${API_BASE}/api/test-results/session/${currentSession.id}/compliance`,
+                    {
+                        cache:
+                            "no-store"
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !response.ok ||
+                !data.success
+            ) {
+
+                throw new Error(
+                    data.message ||
                     "Unable to load compliance."
                 );
 
             }
-            finally {
 
-                setLoading(
-                    false
-                );
 
-            }
+            setCompliance(
+                data.data
+            );
 
-        };
+
+        }
+        catch (err) {
+
+            console.error(
+                err
+            );
+
+            setError(
+                err.message ||
+                "Unable to load compliance."
+            );
+
+        }
+        finally {
+
+            setLoading(
+                false
+            );
+
+        }
+
+    };
 
 
 
@@ -134,12 +174,15 @@ function TestResults({
     // ========================================================
 
     useEffect(
-        () => {
+    () => {
 
-            loadCompliance();
+        loadCompliance();
 
-        },
-        [session?.id]
+    },
+    [
+        session?.id,
+        instrument?._id
+    ]
     );
 
 
@@ -162,8 +205,42 @@ function TestResults({
             setError("");
 
 
+            /*
+            --------------------------------------------------
+            Resolve the active session.
+            If the user came from Dashboard by clicking a
+            COMPLETED instrument, session may not exist yet.
+            --------------------------------------------------
+            */
+
+            let currentSession =
+                activeSession;
+
+
             if (
-                !session?.id
+                !currentSession?.id &&
+                instrument?._id
+            ) {
+
+                const sessionResponse =
+                    await getLatestCompletedSession(
+                        instrument._id
+                    );
+
+
+                currentSession =
+                    sessionResponse.data.session;
+
+
+                setResolvedSession(
+                    currentSession
+                );
+
+            }
+
+
+            if (
+                !currentSession?.id
             ) {
 
                 throw new Error(
@@ -195,7 +272,7 @@ function TestResults({
 
             const response =
                 await generateReport(
-                    session.id
+                    currentSession.id
                 );
 
 

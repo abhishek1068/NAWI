@@ -873,207 +873,142 @@ const getSessionCompliance =
 // FINAL EVALUATION
 // ==========================================================
 
-const finalizeTestSession =
-    async (req, res) => {
+// ==========================================================
+// FINALIZE TEST SESSION
+// ==========================================================
 
-        try {
+const finalizeTestSession = async (
+    req,
+    res
+) => {
 
-            const {
+    try {
+
+        const {
+            sessionId
+        } = req.params;
+
+
+        const session =
+            await TestSession.findById(
                 sessionId
-            } = req.params;
+            );
 
 
-            if (
-                !mongoose.Types.ObjectId.isValid(
-                    sessionId
-                )
-            ) {
+        if (!session) {
 
-                return res.status(400).json({
+            return res.status(404).json({
 
-                    success: false,
-
-                    message:
-                        "Invalid session ID."
-
-                });
-
-            }
-
-
-            const session =
-                await TestSession.findById(
-                    sessionId
-                );
-
-
-            if (!session) {
-
-                return res.status(404).json({
-
-                    success: false,
-
-                    message:
-                        "Test session not found."
-
-                });
-
-            }
-
-
-            const applicableTests =
-                applicableTestsFor(
-                    session
-                );
-
-
-            const results =
-                await loadResults(
-                    sessionId
-                );
-
-
-            const completedCodes =
-                new Set(
-                    results
-                        .filter(
-                            result =>
-                                [
-                                    "PASS",
-                                    "FAIL"
-                                ].includes(
-                                    normalizeStatus(
-                                        result.complianceStatus
-                                    )
-                                )
-                        )
-                        .map(
-                            result =>
-                                result.testCode
-                        )
-                );
-
-
-            const missingTests =
-                applicableTests.filter(
-                    test =>
-                        !completedCodes.has(
-                            test.code
-                        )
-                );
-
-
-            if (
-                missingTests.length > 0
-            ) {
-
-                return res.status(409).json({
-
-                    success: false,
-
-                    message:
-                        "All applicable tests must be completed before final evaluation.",
-
-                    missingTests:
-                        missingTests.map(
-                            test => ({
-
-                                code:
-                                    test.code,
-
-                                name:
-                                    test.name
-
-                            })
-                        )
-
-                });
-
-            }
-
-
-            const failedTests =
-                results.filter(
-                    result =>
-                        normalizeStatus(
-                            result.complianceStatus
-                        ) === "FAIL"
-                ).length;
-
-
-            const overallResult =
-                failedTests > 0
-                    ? "fail"
-                    : "pass";
-
-
-            session.overallResult =
-                overallResult;
-
-
-            session.status =
-                "completed";
-
-
-            session.completedAt =
-                new Date();
-
-
-            session.submittedAt =
-                new Date();
-
-
-            await session.save();
-
-
-            if (
-                session.instrument
-            ) {
-
-                await Instrument.findByIdAndUpdate(
-                    session.instrument,
-                    {
-                        status:
-                            "completed"
-                    }
-                );
-
-            }
-
-
-            return res.json({
-
-                success: true,
+                success: false,
 
                 message:
-                    "Final evaluation completed.",
+                    "Test session not found."
+
+            });
+
+        }
+
+
+        // --------------------------------------------------
+        // GET ALL SAVED RESULTS
+        // --------------------------------------------------
+
+        const results =
+            await TestResult.collection
+                .find({
+                    testSession:
+                        session._id
+                })
+                .toArray();
+
+
+        // --------------------------------------------------
+        // GET APPLICABLE TESTS
+        // --------------------------------------------------
+
+        const applicableTests =
+            (session.applicableTests || [])
+                .filter(
+                    test =>
+                        test.status !==
+                        "not_applicable"
+                );
+
+
+        const totalTests =
+            applicableTests.length;
+
+
+        // --------------------------------------------------
+        // COUNT RESULTS
+        // --------------------------------------------------
+
+        const passedTests =
+            results.filter(
+                result =>
+                    String(
+                        result.complianceStatus
+                    ).toUpperCase() ===
+                    "PASS"
+            ).length;
+
+
+        const failedTests =
+            results.filter(
+                result =>
+                    String(
+                        result.complianceStatus
+                    ).toUpperCase() ===
+                    "FAIL"
+            ).length;
+
+
+        const completedTests =
+            passedTests +
+            failedTests;
+
+
+        // --------------------------------------------------
+        // MAKE SURE EVERY TEST IS COMPLETE
+        // --------------------------------------------------
+
+        if (
+            totalTests === 0
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "No applicable tests were found."
+
+            });
+
+        }
+
+
+        if (
+            completedTests <
+            totalTests
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "All applicable tests must be completed before final evaluation.",
 
                 data: {
 
-                    sessionId:
-                        session._id,
+                    totalTests,
 
-                    overallResult:
-                        overallResult.toUpperCase(),
+                    completedTests,
 
-                    totalTests:
-                        applicableTests.length,
+                    passedTests,
 
-                    completedTests:
-                        completedCodes.size,
-
-                    passedTests:
-                        results.filter(
-                            result =>
-                                normalizeStatus(
-                                    result.complianceStatus
-                                ) === "PASS"
-                        ).length,
-
-                    failedTests,
-
-                    completedAt:
-                        session.completedAt
+                    failedTests
 
                 }
 
@@ -1081,27 +1016,112 @@ const finalizeTestSession =
 
         }
 
-        catch (error) {
 
-            console.error(
-                "finalizeTestSession error:",
-                error
+        // --------------------------------------------------
+        // FINAL OVERALL RESULT
+        // --------------------------------------------------
+
+        const overallResult =
+            failedTests > 0
+                ? "fail"
+                : "pass";
+
+
+        const reason =
+            failedTests > 0
+                ? "One or more applicable tests failed."
+                : "All applicable tests passed.";
+
+
+        // --------------------------------------------------
+        // UPDATE SESSION
+        // --------------------------------------------------
+
+        const updatedSession =
+            await TestSession.findByIdAndUpdate(
+
+                session._id,
+
+                {
+
+                    overallResult,
+
+                    status:
+                        "completed"
+
+                },
+
+                {
+
+                    new: true
+
+                }
+
             );
 
-            return res.status(500).json({
 
-                success: false,
+        // --------------------------------------------------
+        // RESPONSE
+        // --------------------------------------------------
 
-                message:
-                    error.message ||
-                    "Unable to complete final evaluation."
+        return res.json({
 
-            });
+            success: true,
 
-        }
+            message:
+                "Test session finalized successfully.",
 
-    };
+            data: {
 
+                sessionId:
+                    updatedSession._id,
+
+                status:
+                    updatedSession.status,
+
+                overallResult:
+                    overallResult.toUpperCase(),
+
+                reason,
+
+                totalTests,
+
+                completedTests,
+
+                passedTests,
+
+                failedTests
+
+            }
+
+        });
+
+    }
+    catch (error) {
+
+        console.error(
+            "finalizeTestSession:",
+            error
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to finalize test session."
+
+        });
+
+    }
+
+};
+
+
+// ==========================================================
+// EXPORT CONTROLLERS
+// ==========================================================
 
 module.exports = {
 

@@ -205,15 +205,29 @@ function Dashboard({
                                         }
                                         onClick={() => {
 
-                                            setSelectedInstrument(
-                                                instrument
+                                        setSelectedInstrument(
+                                            instrument
+                                        );
+
+                                        if (
+                                            instrument.status ===
+                                            "completed"
+                                        ) {
+
+                                            setCurrentPage(
+                                                "results"
                                             );
+
+                                        }
+                                        else {
 
                                             setCurrentPage(
                                                 "testplan"
                                             );
 
-                                        }}
+                                        }
+
+                                    }}
                                     >
 
                                         <div className="instrument-avatar">

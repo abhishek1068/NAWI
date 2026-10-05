@@ -8,6 +8,7 @@ const {
     "../controllers/testResultController"
 );
 
+
 const router =
     express.Router();
 
@@ -30,5 +31,4 @@ router.post(
 );
 
 
-module.exports =
-    router;
+module.exports = router;

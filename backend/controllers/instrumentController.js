@@ -78,7 +78,81 @@ const getInstrument = async (req, res, next) => {
         next(error);
     }
 };
+// ---------------------------------------------
+// GET LATEST COMPLETED SESSION FOR INSTRUMENT
+// ---------------------------------------------
 
+const getLatestCompletedSession = async (
+    req,
+    res,
+    next
+) => {
+
+    try {
+
+        const session =
+            await TestSession.findOne({
+                instrument:
+                    req.params.id,
+
+                status:
+                    "completed"
+            })
+            .sort({
+                createdAt: -1
+            });
+
+
+        if (!session) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "No completed test session found for this instrument."
+
+            });
+
+        }
+
+
+        res.json({
+
+            success: true,
+
+            session: {
+
+                id:
+                    session._id,
+
+                sessionNumber:
+                    session.sessionNumber,
+
+                reportNumber:
+                    session.reportNumber,
+
+                standard:
+                    session.standard,
+
+                status:
+                    session.status,
+
+                overallResult:
+                    session.overallResult
+
+            }
+
+        });
+
+    }
+    catch (error) {
+
+        next(error);
+
+    }
+
+};
 // ---------------------------------------------
 // START TEST SESSION
 // AUTOMATIC R76 TEST PLAN
@@ -180,5 +254,6 @@ module.exports = {
     registerInstrument,
     getInstruments,
     getInstrument,
+    getLatestCompletedSession,
     startTestSession
 };

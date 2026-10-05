@@ -42,6 +42,13 @@ export const getInstrument = (
     );
 
 
+export const getLatestCompletedSession = (
+    instrumentId
+) =>
+    API.get(
+        `/instruments/${instrumentId}/latest-session`
+    );
+    
 export const registerInstrument = (
     data
 ) =>
