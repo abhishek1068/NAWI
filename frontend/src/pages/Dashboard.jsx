@@ -4,7 +4,8 @@ import React, {
 } from "react";
 
 import {
-    getInstruments
+    getInstruments,
+    deleteInstrument
 } from "../services/api";
 
 import StatCard from "../components/StatCard";
@@ -50,6 +51,66 @@ function Dashboard({
 
         }
     };
+
+    const handleDeleteInstrument = async (
+    instrument
+) => {
+
+    const confirmed =
+        window.confirm(
+
+            `Remove ${instrument.manufacturer} ${instrument.model}?\n\n` +
+
+            `Serial Number: ${instrument.serialNumber}\n\n` +
+
+            `This will permanently remove the instrument, ` +
+            `its test sessions, test results, observations, ` +
+            `and generated reports.\n\n` +
+
+            `This action cannot be undone.`
+
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await deleteInstrument(
+            instrument._id
+        );
+
+
+        await loadData();
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "Delete instrument error:",
+            error
+        );
+
+
+        window.alert(
+
+            error.response
+                ?.data
+                ?.message ||
+
+            "Unable to remove instrument."
+
+        );
+
+    }
+
+};
 
     const testing =
         instruments.filter(
@@ -198,73 +259,110 @@ function Dashboard({
                                 .slice(0, 8)
                                 .map(instrument => (
 
-                                    <button
+                                    <div
                                         className="instrument-row"
                                         key={
                                             instrument._id
                                         }
                                         onClick={() => {
 
-                                        setSelectedInstrument(
-                                            instrument
-                                        );
-
-                                        if (
-                                            instrument.status ===
-                                            "completed"
-                                        ) {
-
-                                            setCurrentPage(
-                                                "results"
+                                            setSelectedInstrument(
+                                                instrument
                                             );
 
-                                        }
-                                        else {
 
-                                            setCurrentPage(
-                                                "testplan"
-                                            );
+                                            if (
+                                                instrument.status ===
+                                                "completed"
+                                            ) {
 
-                                        }
+                                                setCurrentPage(
+                                                    "results"
+                                                );
 
-                                    }}
+                                            }
+                                            else {
+
+                                                setCurrentPage(
+                                                    "testplan"
+                                                );
+
+                                            }
+
+                                        }}
                                     >
 
                                         <div className="instrument-avatar">
+
                                             ⚖
+
                                         </div>
+
 
                                         <div className="instrument-info">
 
                                             <strong>
+
                                                 {
                                                     instrument.manufacturer
                                                 }{" "}
+
                                                 {
                                                     instrument.model
                                                 }
+
                                             </strong>
 
+
                                             <span>
+
                                                 S/N:{" "}
+
                                                 {
                                                     instrument.serialNumber
                                                 }
+
                                             </span>
 
                                         </div>
+
 
                                         <span
                                             className={
                                                 `status-badge ${instrument.status}`
                                             }
                                         >
+
                                             {
                                                 instrument.status
                                             }
+
                                         </span>
 
-                                    </button>
+
+                                        <button
+                                            type="button"
+                                            className="instrument-delete-button"
+                                            title="Remove instrument"
+                                            onClick={(
+                                                event
+                                            ) => {
+
+                                                event.stopPropagation();
+
+                                                handleDeleteInstrument(
+                                                    instrument
+                                                );
+
+                                            }}
+                                        >
+
+                                            🗑
+
+                                        </button>
+
+
+                                    </div>
 
                                 ))}
 

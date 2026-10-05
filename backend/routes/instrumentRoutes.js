@@ -1,47 +1,71 @@
 const express = require("express");
 
 const {
+
     registerInstrument,
+
     getInstruments,
+
     getInstrument,
-    getLatestCompletedSession,
+
+    deleteInstrument,
+
     startTestSession
-} = require("../controllers/instrumentController");
+
+} = require(
+    "../controllers/instrumentController"
+);
+
 
 const router =
     express.Router();
 
 
-// Register new NAWI
+// ---------------------------------------------
+// REGISTER
+// ---------------------------------------------
+
 router.post(
     "/",
     registerInstrument
 );
 
 
-// Get all instruments
+// ---------------------------------------------
+// GET ALL
+// ---------------------------------------------
+
 router.get(
     "/",
     getInstruments
 );
 
 
-// Get latest completed session
-// IMPORTANT: this must be BEFORE /:id
-router.get(
-    "/:id/latest-session",
-    getLatestCompletedSession
+// ---------------------------------------------
+// DELETE
+// IMPORTANT: keep before /:id
+// ---------------------------------------------
+
+router.delete(
+    "/:id",
+    deleteInstrument
 );
 
 
-// Get one instrument
+// ---------------------------------------------
+// GET ONE
+// ---------------------------------------------
+
 router.get(
     "/:id",
     getInstrument
 );
 
 
-// Start OIML R76 testing
+// ---------------------------------------------
+// START TEST
+// ---------------------------------------------
+
 router.post(
     "/:id/start-test",
     startTestSession

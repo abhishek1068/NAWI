@@ -49,6 +49,13 @@ export const getLatestCompletedSession = (
         `/instruments/${instrumentId}/latest-session`
     );
     
+export const deleteInstrument = (
+    instrumentId
+) =>
+    API.delete(
+        `/instruments/${instrumentId}`
+    );
+
 export const registerInstrument = (
     data
 ) =>
